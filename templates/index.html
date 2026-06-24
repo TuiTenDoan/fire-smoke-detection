@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Cảnh Báo Cháy</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #101010;
+            color: #fff;
+        }
+
+        .header {
+            background: #1f1f1f;
+            padding: 16px 28px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #ff405c;
+            font-size: 26px;
+        }
+
+        .status {
+            background: #0abf53;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            padding: 26px;
+        }
+
+        .card {
+            background: #202428;
+            border: 1px solid #4d5863;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #ffc107;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            background: #fff;
+            color: #000;
+            border-radius: 6px;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+
+        button {
+            background: #ffc107;
+            color: #000;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: #fff;
+            float: right;
+            padding: 8px 12px;
+        }
+
+        .result-img {
+            display: block;
+            max-width: 100%;
+            margin: 18px auto 0 auto;
+            border: 2px solid #1fd655;
+            border-radius: 6px;
+        }
+
+        .safe {
+            color: #1fd655;
+            font-weight: bold;
+        }
+
+        .danger {
+            color: #ff405c;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .error {
+            background: #3b1111;
+            color: #ffb3b3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 14px;
+        }
+
+        .model-box {
+            background: #1f1f1f;
+            border-left: 4px solid #00d9ff;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .model-box h3 {
+            margin: 0 0 8px 0;
+            color: #ffc107;
+            font-size: 21px;
+        }
+
+        .model-box p {
+            margin: 0;
+            color: #eeeeee;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .log-title {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+
+        .log-box {
+            background: #000;
+            border: 1px solid #4d5863;
+            border-radius: 8px;
+            padding: 14px;
+            height: 350px;
+            overflow-y: auto;
+            color: #00ff40;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            clear: both;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        th, td {
+            border: 1px solid #59636e;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #2c333a;
+            color: #ffc107;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🚒 FIRE-DETECTION SYSTEM v2</h1>
+        <div class="status">Status: Online</div>
+    </div>
+
+    <div class="container">
+        <main class="card">
+            <h2>Nhận diện khói và đám cháy bằng ảnh tĩnh</h2>
+
+            <form action="/upload_anh" method="POST" enctype="multipart/form-data">
+                <label><b>Upload ảnh cần quét:</b></label><br><br>
+                <input type="file" name="file_anh" accept="image/*" required>
+                <button type="submit">Quét AI</button>
+            </form>
+
+            {% if loi %}
+                <div class="error">{{ loi }}</div>
+            {% endif %}
+
+            {% if ket_qua_text or thong_bao %}
+                <h3>Kết quả:</h3>
+
+                {% if phat_hien %}
+                    <p class="danger">{{ ket_qua_text or thong_bao }}</p>
+                {% else %}
+                    <p class="safe">{{ ket_qua_text or thong_bao }}</p>
+                {% endif %}
+            {% endif %}
+
+            {% if trang_thai %}
+                <h3>Kết quả:</h3>
+
+                {% if trang_thai == 'SAFE' %}
+                    <p class="safe">✅ Không phát hiện khói/lửa.</p>
+                {% elif trang_thai == 'MODEL_ERROR' %}
+                    <p class="danger">❌ Model chưa load được. Kiểm tra đường dẫn best.pt.</p>
+                {% elif trang_thai == 'FIRE_AND_SMOKE' %}
+                    <p class="danger">🚨 Phát hiện khói/lửa.</p>
+                {% elif trang_thai == 'FIRE' %}
+                    <p class="danger">🚨 Phát hiện khói/lửa.</p>
+                {% elif trang_thai == 'SMOKE' %}
+                    <p class="warning">⚠️ Phát hiện khói/lửa.</p>
+                {% else %}
+                    <p class="warning">⚠️ Phát hiện dấu hiệu bất thường.</p>
+                {% endif %}
+            {% endif %}
+
+            {% if ket_qua and ket_qua|length > 0 %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Loại</th>
+                            <th>Độ tin cậy</th>
+                            <th>Vị trí box</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in ket_qua %}
+                            <tr>
+                                <td>{{ item.ten }}</td>
+                                <td>{{ '%.2f'|format(item.conf) }}</td>
+                                <td>{{ item.xyxy }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            {% if anh_ket_qua_b64 %}
+                <img class="result-img" src="data:image/png;base64,{{ anh_ket_qua_b64 }}" alt="Kết quả nhận diện">
+            {% endif %}
+        </main>
+
+        <aside>
+            <div class="model-box">
+                <h3>🔥 Phát hiện khói/lửa</h3>
+                <p>Hệ thống nhận diện dấu hiệu khói hoặc đám cháy thông qua ảnh tải lên.</p>
+            </div>
+
+            <h3 class="log-title">Live System Logs:</h3>
+            <button class="clear-btn" onclick="xoaLog()">Clear</button>
+            <div id="logBox" class="log-box">Đang tải log...</div>
+        </aside>
+    </div>
+
+    <script>
+        async function layLog() {
+            try {
+                const res = await fetch('/lay_log');
+                const logs = await res.json();
+
+                const logBox = document.getElementById('logBox');
+                logBox.innerHTML = logs.map(line => `<div>${line}</div>`).join('');
+                logBox.scrollTop = logBox.scrollHeight;
+            } catch (err) {
+                document.getElementById('logBox').innerHTML = 'Không đọc được log.';
+            }
+        }
+
+        async function xoaLog() {
+            await fetch('/xoa_log', { method: 'POST' });
+            layLog();
+        }
+
+        layLog();
+        setInterval(layLog, 2000);
+    </script>
+</body>
+</html>
